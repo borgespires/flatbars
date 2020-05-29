@@ -29,3 +29,7 @@ if (!templateArg || !viewArg) {
 
 Flatbars.render(viewArg, templateArg, helpersArg, partialsPaths)
     .then((out) => process.stdout.write(out))
+    .catch(err => {
+        console.error(err)
+        process.exit(1)
+    })

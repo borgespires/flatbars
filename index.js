@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 const fs = require('fs')
 const path = require('path')
 const Handlebars = require('handlebars')
@@ -17,27 +17,22 @@ function wasNotFound(err) {
 }
 
 async function render(viewArg, templateArg, helpersArg, partialsPaths) {
-    try {
-        const view = await readView(viewArg)
-        const template = await readTemplate(templateArg)
+    const view = await readView(viewArg)
+    const template = await readTemplate(templateArg)
 
-        if (helpersArg) {
-            const helpers = await requireHelpers(helpersArg)
-            helpers.register(Handlebars);
-        }
-
-        if (partialsPaths) {
-            const partials = await readPartials(partialsPaths)
-            Object.entries(partials).forEach(([name, str]) => {
-                Handlebars.registerPartial(name, str);
-            });
-        }
-
-        return Handlebars.compile(template)(view)
-    } catch (err) {
-        console.error(err)
-        process.exit(1)
+    if (helpersArg) {
+        const helpers = await requireHelpers(helpersArg)
+        helpers.register(Handlebars);
     }
+
+    if (partialsPaths) {
+        const partials = await readPartials(partialsPaths)
+        Object.entries(partials).forEach(([name, str]) => {
+            Handlebars.registerPartial(name, str);
+        });
+    }
+
+    return Handlebars.compile(template)(view)
 }
 
 async function readView(viewArg) {
@@ -74,7 +69,7 @@ async function requireHelpers(helpersArg) {
     if (isJsFile(helpersArg)) {
         return require(path.join(process.cwd(), helpersArg))
     }
-    throw ('Could not require helpers module.\n' + ex.stack);
+    throw ('Could not require helpers file.');
 }
 
 async function readPartials(partialsPaths) {
@@ -83,14 +78,16 @@ async function readPartials(partialsPaths) {
         return path.basename(filename, extension)
     }
 
-    return partialsPaths.reduce(async function (partials, partialPath) {
+    const partials = {}
+
+    for (let i = 0; i < partialsPaths.length; i++) {
+        const partialPath = partialsPaths[i];
         const partial = fs.createReadStream(partialPath)
         const str = await streamToStr(partial)
-
         partials[getPartialName(partialPath)] = str
+    }
 
-        return partials
-    }, {})
+    return partials
 }
 
 function streamToStr(stream) {
@@ -102,9 +99,9 @@ function streamToStr(stream) {
             resolve(data.toString())
         }).on('error', function onError(err) {
             if (wasNotFound(err)) {
-                reject('Could not find file:', err.path)
+                reject(`Could not find file: ${err.path}.`)
             } else {
-                reject('Error while reading file:', err.message)
+                reject(`Error while reading file: ${err.message}.`)
             }
         })
     })

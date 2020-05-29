@@ -7,7 +7,7 @@
     "flatbars": "./bin/index.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tape ./tests/test.js"
   },
   "keywords": [
     "handlebars",
@@ -19,5 +19,8 @@
   "license": "ISC",
   "dependencies": {
     "handlebars": "^4.7.6"
+  },
+  "devDependencies": {
+    "tape": "^5.0.1"
   }
 }
