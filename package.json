@@ -9,18 +9,26 @@
   "scripts": {
     "test": "tape ./tests/test.js"
   },
-  "keywords": [
-    "handlebars",
-    "cli",
-    "template",
-    "templates"
-  ],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "handlebars": "^4.7.6"
   },
   "devDependencies": {
     "tape": "^5.0.1"
-  }
+  },
+  "homepage": "https://github.com/borgespires/flatbars",
+  "author": "Antonio Pires (@borgespires)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/borgespires/flatbars.git"
+  },
+  "bugs": {
+    "url": "https://github.com/borgespires/flatbars/issues"
+  },
+  "keywords": [
+    "handlebars",
+    "cli",
+    "template",
+    "templates"
+  ]
 }
