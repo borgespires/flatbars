@@ -1,65 +1,81 @@
-var test = require('tape')
-var flatbars = require('..')
+const test = require('tape')
+const child_process = require('child_process')
+const moduleVersion = require('../package').version
 
-test('render simple template', async function (t) {
-    const out = await flatbars.render('./tests/view.json', './tests/simple/template.handlebars')
-    t.same(out, 'hello world')
-    t.end()
+function exec() {
+    return child_process.exec.apply(child_process, arguments)
+}
+
+test('writes rendered template into stdout when received view data from a file', function (t) {
+    exec('bin/index.js ./tests/view.json ./tests/simple/template.handlebars', (err, stdout, stderr) => {
+        t.equal(err, null)
+        t.equal(stderr, '')
+        t.equal(stdout, 'hello world')
+        t.end()
+    })
 })
 
-test('helper functions', async function (t) {
-    const view = './tests/view.json'
-    const template = './tests/with-helpers/template.handlebars'
-
-    const out = await flatbars.render(view, template, './tests/with-helpers/helpers.js')
-    
-    t.same(out, 'HELLO WORLD')
-    t.end()
+test('writes rendered template into stdout when receive view data from stdin', function (t) {
+    exec('cat ./tests/view.json | bin/index.js - ./tests/simple/template.handlebars', (err, stdout, stderr) => {
+        t.equal(err, null)
+        t.equal(stderr, '')
+        t.equal(stdout, 'hello world')
+        t.end()
+    })
 })
 
-test('render with partials', async function (t) {
-    const view = './tests/view.json'
-    const template = './tests/with-partials/template.handlebars'
-    const partials = ['./tests/with-partials/partial1.handlebars', './tests/with-partials/partial2.handlebars']
-
-    const out = await flatbars.render(view, template, undefined, partials)
-    
-    t.same(out, 'partial 1 > hello world\npartial 2 > hello world')
-    t.end()
+test('writes rendered template into stdout using passed helper functions', function (t) {
+    exec('bin/index.js ./tests/view.json ./tests/with-helpers/template.handlebars ./tests/with-helpers/helpers.js', (err, stdout, stderr) => {
+        t.equal(err, null)
+        t.equal(stderr, '')
+        t.equal(stdout, 'HELLO WORLD')
+        t.end()
+    })
 })
 
-test('render simple template', async function (t) {
-    const out = await flatbars.render('./tests/view.json', './tests/simple/template.handlebars')
-    t.same(out, 'hello world')
-    t.end()
+test('writes error when fails to require helpers file', function (t) {
+    exec('bin/index.js ./tests/view.json ./tests/with-helpers/template.handlebars ./not_found.file', (err, stdout, stderr) => {
+        t.equal(stderr, 'Could not require helpers file.\n')
+        t.end();
+    });
+});
+
+test('writes rendered template into stdout using passed partial templates', function (t) {
+    exec('bin/index.js '
+        + '-p ./tests/with-partials/partial1.handlebars '
+        + '-p ./tests/with-partials/partial2.handlebars '
+        + './tests/view.json ./tests/with-partials/template.handlebars', (err, stdout, stderr) => {
+            t.equal(err, null)
+            t.equal(stderr, '')
+            t.equal(stdout, 'partial 1 > hello world\npartial 2 > hello world')
+            t.end()
+        })
 })
 
-// test('render from stdin', async function (t) {
-// })
+test('writes error when file not found', function (t) {
+    exec('cat ./tests/view.json | bin/index.js - ./not_found.file', (err, stdout, stderr) => {
+        t.equal(stderr, 'Could not find file: ./not_found.file.\n')
+        t.end();
+    });
+});
 
-// test('invalid JSON', async function (t) {
-// })
-
-test('fail to find file', async function (t) {
-    try {
-        await flatbars.render('./tests/view.json', 'fake_file')
-        t.fail('should throw an error')
-    } catch(err) {
-        t.true(err.match(/Could not find file: fake_file./))
-    }
-    
-    t.end()
+test('writes parsing errors when given invalid JSON', function (t) {
+    exec('echo {title:"hello world"} | bin/index.js - ./tests/simple/template.handlebars', (err, stdout, stderr) => {
+        t.notEqual(stderr.indexOf('Could not parse view as JSON'), -1)
+        t.end()
+    })
 })
 
-test('fail to require helpers file', async function (t) {
-    const view = './tests/view.json'
-    const template = './tests/with-helpers/template.handlebars'
-    try {
-        await flatbars.render(view, template, 'fake_file')
-        t.fail('should throw an error')
-    } catch(err) {
-        t.true(err.match(/Could not require helpers file./))
-    }
-    
-    t.end()
+test('writes command usage into stderr when runned with wrong number of arguments', function (t) {
+    exec('bin/index.js', (err, stdout, stderr) => {
+        t.notEqual(stderr.indexOf('Syntax: flatbars'), -1)
+        t.end()
+    })
+})
+
+test('writes module version into stdout when runned with -v', function (t) {
+    exec('bin/index.js -v', (err, stdout, stderr) => {
+        t.equal(stdout, moduleVersion + '\n')
+        t.end()
+    })
 })
